@@ -13,7 +13,7 @@
 <script>
   async function fetchQuestions(part) {
     try {
-      const response = await fetch(`https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbz2X37n6Pvsk7i8QRYN1FJ9t1S-T5bZpI2QzLbd3FTdL2b8S5-bxTe6KKmylp2G6j7Zeg/exec/exec?part=${part}`);
+      const response = await fetch(`https://script.google.com/macros/s/AKfycbz2X37n6Pvsk7i8QRYN1FJ9t1S-T5bZpI2QzLbd3FTdL2b8S5-bxTe6KKmylp2G6j7Zeg/exec?part=${part}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
