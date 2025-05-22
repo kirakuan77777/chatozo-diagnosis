@@ -1,70 +1,44 @@
-<!-- chat.html（Netlifyで使うHTMLファイル） -->
-<!DOCTYPE html>
+<<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>チャト蔵診断</title>
-  <style>
-    body { font-family: sans-serif; background: #f8f8f8; text-align: center; padding: 2rem; }
-    .question-box { background: white; padding: 2rem; margin: auto; max-width: 600px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    .choices button { margin: 0.5rem; padding: 1rem 2rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; background: #e0e0ff; }
-  </style>
+  <title>チャト蔵 診断</title>
 </head>
 <body>
-  <div class="question-box">
-    <h2 id="question">読み込み中...</h2>
-    <div class="choices">
-      <button onclick="submitAnswer('A')" id="btnA">A</button>
-      <button onclick="submitAnswer('B')" id="btnB">B</button>
-      <button onclick="submitAnswer('C')" id="btnC">C</button>
-    </div>
+  <div id="loading">読み込み中...</div>
+  <div id="content" style="display:none;">
+    <!-- 質問表示部分 -->
   </div>
 
-  <script>
-    const scriptUrl = 'https://script.google.com/macros/s/【GASのWebアプリURL】/exec';
-    let questions = [];
-    let currentIndex = 0;
-    let userAnswers = [];
-    const userId = Date.now();
-
-    async function fetchQuestions() {
-      const part = 'first'; // or 'second' for later part
-      const res = await fetch(`${scriptUrl}?part=${part}`);
-      questions = await res.json();
-      showQuestion();
-    }
-
-    function showQuestion() {
-      if (currentIndex >= questions.length) {
-        document.getElementById("question").innerText = "診断終了！ありがとう！";
-        document.querySelector(".choices").style.display = 'none';
-        return;
+<script>
+  async function fetchQuestions(part) {
+    try {
+      const response = await fetch(`https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbz2X37n6Pvsk7i8QRYN1FJ9t1S-T5bZpI2QzLbd3FTdL2b8S5-bxTe6KKmylp2G6j7Zeg/exec/exec?part=${part}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-      const q = questions[currentIndex];
-      document.getElementById("question").innerText = q.question;
-      document.getElementById("btnA").innerText = q.choiceA;
-      document.getElementById("btnB").innerText = q.choiceB;
-      document.getElementById("btnC").innerText = q.choiceC;
+      const questions = await response.json();
+      return questions;
+    } catch (error) {
+      console.error('質問の取得に失敗しました:', error);
+      alert('質問の取得に失敗しました。時間をおいて再度アクセスしてください。');
+      document.getElementById('loading').textContent = '質問の取得に失敗しました。';
+      return null;
     }
+  }
 
-    async function submitAnswer(choice) {
-      const answerData = {
-        userId,
-        questionIndex: currentIndex + 1,
-        answer: choice,
-        part: 'first'
-      };
-      await fetch(scriptUrl, {
-        method: 'POST',
-        body: JSON.stringify(answerData),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      currentIndex++;
-      showQuestion();
-    }
+  async function start() {
+    const questions = await fetchQuestions('first');
+    if (!questions) return;  // 取得失敗時は処理中断
 
-    fetchQuestions();
-  </script>
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+
+    // ここで質問表示などの処理へ続く
+    console.log(questions);
+  }
+
+  start();
+</script>
 </body>
 </html>
