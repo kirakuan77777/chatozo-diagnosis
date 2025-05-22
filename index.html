@@ -1,37 +1,67 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>スーパータサカの冒険 - 動画イントロ</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>チャト蔵診断 - Super Tasaka</title>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
+    #video-container, #skip-button {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       background: black;
-      overflow: hidden;
+      z-index: 9999;
     }
-    #intro-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    #skip-button {
+      color: white;
+      font-size: 18px;
+      padding: 10px 20px;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <!-- 動画ファイル -->
-  <video id="intro-video" autoplay muted playsinline>
-    <source src="intro.mp4" type="video/mp4">
-    このブラウザは動画再生をサポートしていません。
-  </video>
 
-  <script>
-    // 再生終了イベントで診断ページへ遷移
-    const video = document.getElementById('intro-video');
-    video.addEventListener('ended', () => {
-      window.location.href = "chat.html";
+<div id="video-container">
+  <video id="intro-video" width="100%" height="100%" autoplay muted>
+    <source src="intro.mp4" type="video/mp4" />
+    お使いのブラウザは動画に対応していません。
+  </video>
+  <button id="skip-button">スキップ</button>
+</div>
+
+<script>
+  // 初回表示かどうかをlocalStorageで判定
+  const isFirstVisit = !localStorage.getItem('visited');
+
+  const videoContainer = document.getElementById('video-container');
+  const introVideo = document.getElementById('intro-video');
+  const skipButton = document.getElementById('skip-button');
+
+  if (!isFirstVisit) {
+    // 初回でない場合は動画をスキップ
+    videoContainer.style.display = 'none';
+    window.location.href = 'chat.html';
+  } else {
+    // 初回ならvisitedフラグを設定
+    localStorage.setItem('visited', 'true');
+
+    // 動画終了時またはスキップ時に診断画面へ遷移
+    introVideo.addEventListener('ended', () => {
+      window.location.href = 'chat.html';
     });
-  </script>
+
+    skipButton.addEventListener('click', () => {
+      introVideo.pause();
+      window.location.href = 'chat.html';
+    });
+  }
+</script>
+
 </body>
 </html>
