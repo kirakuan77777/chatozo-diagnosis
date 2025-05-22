@@ -1,0 +1,70 @@
+<!-- chat.html（Netlifyで使うHTMLファイル） -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>チャト蔵診断</title>
+  <style>
+    body { font-family: sans-serif; background: #f8f8f8; text-align: center; padding: 2rem; }
+    .question-box { background: white; padding: 2rem; margin: auto; max-width: 600px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .choices button { margin: 0.5rem; padding: 1rem 2rem; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; background: #e0e0ff; }
+  </style>
+</head>
+<body>
+  <div class="question-box">
+    <h2 id="question">読み込み中...</h2>
+    <div class="choices">
+      <button onclick="submitAnswer('A')" id="btnA">A</button>
+      <button onclick="submitAnswer('B')" id="btnB">B</button>
+      <button onclick="submitAnswer('C')" id="btnC">C</button>
+    </div>
+  </div>
+
+  <script>
+    const scriptUrl = 'https://script.google.com/macros/s/【GASのWebアプリURL】/exec';
+    let questions = [];
+    let currentIndex = 0;
+    let userAnswers = [];
+    const userId = Date.now();
+
+    async function fetchQuestions() {
+      const part = 'first'; // or 'second' for later part
+      const res = await fetch(`${scriptUrl}?part=${part}`);
+      questions = await res.json();
+      showQuestion();
+    }
+
+    function showQuestion() {
+      if (currentIndex >= questions.length) {
+        document.getElementById("question").innerText = "診断終了！ありがとう！";
+        document.querySelector(".choices").style.display = 'none';
+        return;
+      }
+      const q = questions[currentIndex];
+      document.getElementById("question").innerText = q.question;
+      document.getElementById("btnA").innerText = q.choiceA;
+      document.getElementById("btnB").innerText = q.choiceB;
+      document.getElementById("btnC").innerText = q.choiceC;
+    }
+
+    async function submitAnswer(choice) {
+      const answerData = {
+        userId,
+        questionIndex: currentIndex + 1,
+        answer: choice,
+        part: 'first'
+      };
+      await fetch(scriptUrl, {
+        method: 'POST',
+        body: JSON.stringify(answerData),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      currentIndex++;
+      showQuestion();
+    }
+
+    fetchQuestions();
+  </script>
+</body>
+</html>
