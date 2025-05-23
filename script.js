@@ -1,4 +1,4 @@
-const SPREADSHEET_API_URL = 'https://script.google.com/macros/s/AKfycbz2X37n6Pvsk7i8QRYN1FJ9t1S-T5bZpI2QzLbd3FTdL2b8S5-bxTe6KKmylp2G6j7Zeg/exec';
+const SPREADSHEET_API_URL = 'https://script.google.com/macros/s/AKfycbweirbWkxZ4vcqwfK0Nm8hvbPP6aEyoNuf7oIfRDSw5kvwS_zW-PWHtYHXnMPEtMx3Tww/exec';
 const USER_ID = 'user001'; // 実際にはランダムIDやLINE IDなどに置き換え
 
 let questions = [];

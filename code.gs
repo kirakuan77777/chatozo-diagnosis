@@ -1,70 +1,106 @@
-const SHEET_ID = '1BR2aVxllnrpbllC7RNPXPD2wxQxoQFKhEOzUoVIj-EM'; // スプレッドシートID
+// === 各スプレッドシートのIDをここに設定 ===
+const SHEET_ID_FIRST = '1e7LZLP9qCz32JzfdAFvwPTys-cpSAlwhB277pcxg8Cs';
+const SHEET_ID_SECOND = '1eVKuV5z1vqz7vd8MCj5_zKUI-P5glcxrpxHWWGd14AI';
+const SHEET_ID_RECORD = '1BR2aVxllnrpbllC7RNPXPD2wxQxoQFKhEOzUoVIj-EM';
 
+// === GET：質問データを取得（前半 or 後半）===
 function doGet(e) {
-  // ウェブアプリとしてGASを機能させるため、簡単な応答を返す。
   try {
-    Logger.log("doGet called, returning simple status.");
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: "Google Apps Script is active." }))
+    const type = e.parameter.type || 'first';
+    let ss;
+
+    if (type === 'first') {
+      ss = SpreadsheetApp.openById(SHEET_ID_FIRST);
+    } else if (type === 'second') {
+      ss = SpreadsheetApp.openById(SHEET_ID_SECOND);
+    } else {
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: 'ERROR',
+        message: 'Invalid type parameter' 
+      }))
+        .setMimeType(ContentService.MimeType.JSON)
+        .setHeader('Access-Control-Allow-Origin', '*');
+    }
+
+    const sheet = ss.getSheets()[0];
+    const data = sheet.getDataRange().getValues();
+    const questions = [];
+
+    for (let i = 1; i < data.length; i++) {
+      if (!data[i][1]) continue; // 空の行をスキップ
+      
+      questions.push({
+        text: data[i][1],     // 質問文
+        choiceA: data[i][2] || '',      // A選択肢
+        choiceB: data[i][4] || '',      // B選択肢
+        choiceC: data[i][6] || ''       // C選択肢
+      });
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'OK',
+      questions: questions 
+    }))
       .setMimeType(ContentService.MimeType.JSON)
       .setHeader('Access-Control-Allow-Origin', '*');
+
   } catch (err) {
-    Logger.log(`Error in doGet (simplified): ${err.toString()} ${err.stack}`);
-    return ContentService
-      .createTextOutput(JSON.stringify({ error: "An unexpected error occurred in doGet.", details: err.toString() }))
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'ERROR',
+      message: err.message 
+    }))
       .setMimeType(ContentService.MimeType.JSON)
       .setHeader('Access-Control-Allow-Origin', '*');
   }
 }
 
+// === POST：回答を保存 ===
 function doPost(e) {
   try {
-    const ss = SpreadsheetApp.openById(SHEET_ID);
-    const sheetName = 'ユーザ記録'; // 回答を記録するシート名
-    const sheet = ss.getSheetByName(sheetName);
+    const data = JSON.parse(e.postData.contents);
+    const { userId, qNum, answer } = data;
 
-    if (!sheet) {
-      const errorMsg = `Error: Sheet named "${sheetName}" not found in spreadsheet ID "${SHEET_ID}".`;
-      Logger.log(errorMsg);
-      return ContentService
-        .createTextOutput(JSON.stringify({ error: errorMsg }))
-        .setMimeType(ContentService.MimeType.JSON)
-        .setHeader('Access-Control-Allow-Origin', '*');
+    if (!userId || !qNum || !answer) {
+      throw new Error('必要なパラメータが不足しています');
     }
 
-    const data = JSON.parse(e.postData.contents);
-    // userId, questionIndex, answer を受け取る想定
-    const { userId, questionIndex, answer } = data;
+    const ss = SpreadsheetApp.openById(SHEET_ID_RECORD);
+    const sheet = ss.getSheetByName('ユーザ記録');
 
-    // questionIndex は 0-indexed で来ると想定
-    // スプレッドシートの列: A列(1)にユーザーID, B列(2)に質問0の回答, C列(3)に質問1の回答...
-    const targetColumn = questionIndex + 2;
+    if (!sheet) {
+      throw new Error('シート「ユーザ記録」が見つかりません');
+    }
 
-    let userRow = -1;
     const records = sheet.getDataRange().getValues();
-    for (let i = 1; i < records.length; i++) { // 1行目はヘッダーと仮定
-      if (records[i][0] == userId) { // ユーザーIDはA列 (records[i][0])
-        userRow = i + 1; // getRangeは1-indexed
+    let userRow = -1;
+
+    for (let i = 1; i < records.length; i++) {
+      if (records[i][0] == userId) {
+        userRow = i + 1;
         break;
       }
     }
 
     if (userRow === -1) {
       userRow = sheet.getLastRow() + 1;
-      sheet.getRange(userRow, 1).setValue(userId); // A列にユーザーID
+      sheet.getRange(userRow, 1).setValue(userId);
     }
 
-    sheet.getRange(userRow, targetColumn).setValue(answer);
+    // 回答をB列(2)から順に記録
+    sheet.getRange(userRow, qNum + 2).setValue(answer);
 
-    return ContentService
-      .createTextOutput(JSON.stringify({ status: 'OK', message: 'Answer recorded successfully.' }))
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'OK',
+      message: '回答を保存しました' 
+    }))
       .setMimeType(ContentService.MimeType.JSON)
       .setHeader('Access-Control-Allow-Origin', '*');
 
   } catch (err) {
-    Logger.log(`Error in doPost: ${err.toString()} ${err.stack}`);
-    return ContentService
-      .createTextOutput(JSON.stringify({ error: "An unexpected error occurred in doPost.", details: err.toString() }))
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: 'ERROR',
+      message: err.message 
+    }))
       .setMimeType(ContentService.MimeType.JSON)
       .setHeader('Access-Control-Allow-Origin', '*');
   }
