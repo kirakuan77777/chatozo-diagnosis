@@ -104,4 +104,3 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON)
       .setHeader('Access-Control-Allow-Origin', '*');
   }
-}

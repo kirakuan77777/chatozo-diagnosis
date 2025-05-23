@@ -22,17 +22,43 @@
       top: 20px;
       right: 20px;
       cursor: pointer;
+      z-index: 10000;
+    }
+    #error-message {
+      color: white;
+      text-align: center;
+      padding: 20px;
+      display: none;
+    }
+    #play-button {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 15px 30px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.8);
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: none;
+      z-index: 10000;
     }
   </style>
 </head>
 <body>
 
 <div id="video-container">
-  <video id="intro-video" width="100%" height="100%" autoplay muted>
+  <video id="intro-video" width="100%" height="100%" playsinline>
     <source src="intro.mp4" type="video/mp4" />
     お使いのブラウザは動画に対応していません。
   </video>
   <button id="skip-button">スキップ</button>
+  <button id="play-button">再生</button>
+  <div id="error-message">
+    動画の読み込みに失敗しました。<br>
+    スキップボタンを押して診断を開始してください。
+  </div>
 </div>
 
 <script>
@@ -42,24 +68,61 @@
   const videoContainer = document.getElementById('video-container');
   const introVideo = document.getElementById('intro-video');
   const skipButton = document.getElementById('skip-button');
+  const playButton = document.getElementById('play-button');
+  const errorMessage = document.getElementById('error-message');
+
+  function startDiagnosis() {
+    videoContainer.style.display = 'none';
+    window.location.href = 'chat.html';
+  }
 
   if (!isFirstVisit) {
     // 初回でない場合は動画をスキップ
-    videoContainer.style.display = 'none';
-    window.location.href = 'chat.html';
+    startDiagnosis();
   } else {
     // 初回ならvisitedフラグを設定
     localStorage.setItem('visited', 'true');
 
-    // 動画終了時またはスキップ時に診断画面へ遷移
-    introVideo.addEventListener('ended', () => {
-      window.location.href = 'chat.html';
+    // 動画の読み込みエラー処理
+    introVideo.addEventListener('error', (e) => {
+      console.error('動画の読み込みエラー:', e);
+      errorMessage.style.display = 'block';
+      playButton.style.display = 'none';
     });
 
-    skipButton.addEventListener('click', () => {
-      introVideo.pause();
-      window.location.href = 'chat.html';
+    // 動画の再生準備完了時
+    introVideo.addEventListener('canplay', () => {
+      playButton.style.display = 'block';
     });
+
+    // 動画終了時の処理
+    introVideo.addEventListener('ended', startDiagnosis);
+
+    // スキップボタンの処理
+    skipButton.addEventListener('click', startDiagnosis);
+
+    // 再生ボタンの処理
+    playButton.addEventListener('click', () => {
+      introVideo.play()
+        .then(() => {
+          playButton.style.display = 'none';
+        })
+        .catch(error => {
+          console.error('動画の再生に失敗:', error);
+          errorMessage.style.display = 'block';
+        });
+    });
+
+    // 自動再生の試行
+    introVideo.play()
+      .then(() => {
+        playButton.style.display = 'none';
+      })
+      .catch(error => {
+        console.log('自動再生に失敗:', error);
+        // 自動再生に失敗した場合は再生ボタンを表示
+        playButton.style.display = 'block';
+      });
   }
 </script>
 
